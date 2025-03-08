@@ -9,9 +9,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const sql = postgres(process.env.DATABASE_URL || 'postgres://user:password@localhost:5432/dbname');
+const sql = postgres(process.env.DATABASE_URL || 'postgres://user:password@localhost:5432/stock_manager');
 
-// Middleware to validate UUID
 const validateUUID = (req, res, next) => {
     const { uuid } = req.params;
     if (!uuidValidate(uuid)) {
@@ -20,20 +19,19 @@ const validateUUID = (req, res, next) => {
     next();
 };
 
-// Create a new category
 app.post('/api/categories', [
-    body('categoryName').notEmpty().withMessage('Category name is required'),
+    body('category_name').notEmpty().withMessage('Category name is required'), 
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { categoryName } = req.body;
+    const { category_name } = req.body; 
     try {
         const category = await sql`
-            INSERT INTO component_manager.category (categoryName)
-            VALUES (${categoryName})
+            INSERT INTO component_manager.category (category_name)
+            VALUES (${category_name})
             RETURNING *;
         `;
         res.status(201).json(category);
@@ -42,7 +40,6 @@ app.post('/api/categories', [
     }
 });
 
-// Get all categories
 app.get('/api/categories', async (req, res) => {
     try {
         const categories = await sql`SELECT * FROM component_manager.category;`;
@@ -52,9 +49,8 @@ app.get('/api/categories', async (req, res) => {
     }
 });
 
-// Update a category
 app.put('/api/categories/:uuid', validateUUID, [
-    body('categoryName').notEmpty().withMessage('Category name is required'),
+    body('category_name').notEmpty().withMessage('Category name is required'), 
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -62,11 +58,11 @@ app.put('/api/categories/:uuid', validateUUID, [
     }
 
     const { uuid } = req.params;
-    const { categoryName } = req.body;
+    const { category_name } = req.body; 
     try {
         const category = await sql`
             UPDATE component_manager.category
-            SET categoryName = ${categoryName}
+            SET category_name = ${category_name}
             WHERE uuid = ${uuid}
             RETURNING *;
         `;
@@ -79,7 +75,6 @@ app.put('/api/categories/:uuid', validateUUID, [
     }
 });
 
-// Delete a category
 app.delete('/api/categories/:uuid', validateUUID, async (req, res) => {
     const { uuid } = req.params;
     try {
@@ -93,9 +88,9 @@ app.delete('/api/categories/:uuid', validateUUID, async (req, res) => {
     }
 });
 
-// Create a new sub-category
+
 app.post('/api/sub-categories', [
-    body('subCategoryName').notEmpty().withMessage('Sub-category name is required'),
+    body('sub_category_name').notEmpty().withMessage('Sub-category name is required'), 
     body('parent').notEmpty().withMessage('Parent category UUID is required'),
 ], async (req, res) => {
     const errors = validationResult(req);
@@ -103,11 +98,11 @@ app.post('/api/sub-categories', [
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { subCategoryName, parent } = req.body;
+    const { sub_category_name, parent } = req.body; 
     try {
         const subCategory = await sql`
-            INSERT INTO component_manager.sub_category (subCategoryName, parent)
-            VALUES (${subCategoryName}, ${parent})
+            INSERT INTO component_manager.sub_category (sub_category_name, parent)
+            VALUES (${sub_category_name}, ${parent})
             RETURNING *;
         `;
         res.status(201).json(subCategory);
@@ -116,7 +111,6 @@ app.post('/api/sub-categories', [
     }
 });
 
-// Get all sub-categories by category UUID
 app.get('/api/sub-categories/:uuid', validateUUID, async (req, res) => {
     const { uuid } = req.params;
     try {
@@ -127,9 +121,9 @@ app.get('/api/sub-categories/:uuid', validateUUID, async (req, res) => {
     }
 });
 
-// Update a sub-category
+
 app.put('/api/sub-categories/:uuid', validateUUID, [
-    body('subCategoryName').notEmpty().withMessage('Sub-category name is required'),
+    body('sub_category_name').notEmpty().withMessage('Sub-category name is required'), 
     body('parent').notEmpty().withMessage('Parent category UUID is required'),
 ], async (req, res) => {
     const errors = validationResult(req);
@@ -138,11 +132,11 @@ app.put('/api/sub-categories/:uuid', validateUUID, [
     }
 
     const { uuid } = req.params;
-    const { subCategoryName, parent } = req.body;
+    const { sub_category_name, parent } = req.body; 
     try {
         const subCategory = await sql`
             UPDATE component_manager.sub_category
-            SET subCategoryName = ${subCategoryName}, parent = ${parent}
+            SET sub_category_name = ${sub_category_name}, parent = ${parent}
             WHERE uuid = ${uuid}
             RETURNING *;
         `;
@@ -155,7 +149,6 @@ app.put('/api/sub-categories/:uuid', validateUUID, [
     }
 });
 
-// Delete a sub-category
 app.delete('/api/sub-categories/:uuid', validateUUID, async (req, res) => {
     const { uuid } = req.params;
     try {
@@ -169,7 +162,6 @@ app.delete('/api/sub-categories/:uuid', validateUUID, async (req, res) => {
     }
 });
 
-// Create a new component
 app.post('/api/components', [
     body('reference').notEmpty().withMessage('Reference is required'),
     body('quantity').isInt({ min: 0 }).withMessage('Quantity must be a non-negative integer'),
@@ -195,7 +187,6 @@ app.post('/api/components', [
     }
 });
 
-// Get all components
 app.get('/api/components', async (req, res) => {
     try {
         const components = await sql`SELECT * FROM component_manager.component;`;
@@ -205,7 +196,6 @@ app.get('/api/components', async (req, res) => {
     }
 });
 
-// Get components by category UUID
 app.get('/api/components/category/:uuid', validateUUID, async (req, res) => {
     const { uuid } = req.params;
     try {
@@ -216,7 +206,6 @@ app.get('/api/components/category/:uuid', validateUUID, async (req, res) => {
     }
 });
 
-// Get components by sub-category UUID
 app.get('/api/components/sub-category/:uuid', validateUUID, async (req, res) => {
     const { uuid } = req.params;
     try {
@@ -227,7 +216,6 @@ app.get('/api/components/sub-category/:uuid', validateUUID, async (req, res) => 
     }
 });
 
-// Update a component
 app.put('/api/components/:uuid', validateUUID, [
     body('reference').notEmpty().withMessage('Reference is required'),
     body('quantity').isInt({ min: 0 }).withMessage('Quantity must be a non-negative integer'),
@@ -258,7 +246,6 @@ app.put('/api/components/:uuid', validateUUID, [
     }
 });
 
-// Delete a component
 app.delete('/api/components/:uuid', validateUUID, async (req, res) => {
     const { uuid } = req.params;
     try {
@@ -272,10 +259,9 @@ app.delete('/api/components/:uuid', validateUUID, async (req, res) => {
     }
 });
 
-// Create a new sub-component
 app.post('/api/sub-components', [
     body('super_uuid').notEmpty().withMessage('Super UUID is required'),
-    body('place').notEmpty().withMessage('Place is required'),
+    body('place').notEmpty().withMessage('Place is required'), 
     body('note').optional().isString().withMessage('Note must be a string'),
 ], async (req, res) => {
     const errors = validationResult(req);
@@ -296,7 +282,6 @@ app.post('/api/sub-components', [
     }
 });
 
-// Get all sub-components by component UUID
 app.get('/api/sub-components/component/:uuid', validateUUID, async (req, res) => {
     const { uuid } = req.params;
     try {
@@ -307,10 +292,9 @@ app.get('/api/sub-components/component/:uuid', validateUUID, async (req, res) =>
     }
 });
 
-// Update a sub-component
 app.put('/api/sub-components/:uuid', validateUUID, [
     body('super_uuid').notEmpty().withMessage('Super UUID is required'),
-    body('place').notEmpty().withMessage('Place is required'),
+    body('place').notEmpty().withMessage('Place is required'), 
     body('note').optional().isString().withMessage('Note must be a string'),
 ], async (req, res) => {
     const errors = validationResult(req);
@@ -336,7 +320,6 @@ app.put('/api/sub-components/:uuid', validateUUID, [
     }
 });
 
-// Delete a sub-component
 app.delete('/api/sub-components/:uuid', validateUUID, async (req, res) => {
     const { uuid } = req.params;
     try {
